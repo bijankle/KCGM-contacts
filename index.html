@@ -282,8 +282,11 @@ function card(c, tokens){
   const tel = phones(c.mobile).find(p => p.tel);
   const noTel = c.mobile && !tel ? '<div class="meta">Mobile: ' + hl(c.mobile, tokens) + '</div>' : '';
   const slot = '<span class="ibtn slot" aria-hidden="true"></span>';
-  const call = tel ? '<a class="ibtn call" href="tel:' + esc(tel.tel) + '" title="Call ' + esc(tel.label) + '" aria-label="Call ' + esc(tel.label) + '">' + ICON.call + '</a>' : slot;
-  const teams = '<a class="ibtn teams" href="msteams://" data-act="teams" title="Copy ' + (c.email ? 'email' : 'name') + ' and open Teams (hold for direct chat)" aria-label="Copy ' + (c.email ? 'email' : 'name') + ' and open Teams">' + ICON.teams + '</a>';
+  const call = tel ? '<a class="ibtn call" href="tel:' + esc(tel.tel) + '" data-act="call" title="Copy and call ' + esc(tel.label) + '" aria-label="Call ' + esc(tel.label) + '">' + ICON.call + '</a>' : slot;
+  // phone: open the Teams app, then paste in its search to see status; PC: open the chat, which shows status in the header
+  const teamsHref = MOBILE ? 'msteams://' : c.email ? chatUrl(c.email) : 'https://teams.microsoft.com/';
+  const teamsTip = 'Copy ' + (c.email ? 'email' : 'name') + ' and open Teams' + (MOBILE && c.email ? ' (hold for direct chat)' : '');
+  const teams = '<a class="ibtn teams" href="' + esc(teamsHref) + '"' + (MOBILE ? '' : ' target="_blank" rel="noopener"') + ' data-act="teams" title="' + teamsTip + '" aria-label="' + teamsTip + '">' + ICON.teams + '</a>';
   const mail = c.email ? '<a class="ibtn" href="mailto:' + esc(c.email) + '" title="Email ' + esc(c.email) + '" aria-label="Email ' + esc(c.email) + '">' + ICON.mail + '</a>' : slot;
   return '<div class="card" data-id="' + esc(c.id) + '"><div class="info">'
     + '<div class="name">' + hl(c.name || '(no name)', tokens) + '</div>'
@@ -340,14 +343,21 @@ $('list').addEventListener('click', e => {
     if (Date.now() - heldAt < 800){ e.preventDefault(); return; }   // a long press already opened the chat
     const text = c.email || c.name || '';
     copyText(text);
-    setStatus((c.email ? 'Email' : 'Name') + ' copied, paste it in Teams search');
-    return;   // the link itself opens the Teams app
+    setStatus((c.email ? 'Email' : 'Name') + ' copied' + (MOBILE || !c.email ? ', paste it in Teams search' : ', opening Teams chat'));
+    return;   // the link itself opens Teams
+  }
+  if (act === 'call'){
+    copyText(c.mobile);
+    setStatus('Number copied' + (MOBILE ? '' : ', paste it into your calling app if it does not open'));
+    return;   // the tel: link itself opens the calling app
   }
   if (act === 'vcf') saveVcf(c);
   if (act === 'edit') openEdit(c);
 });
 
-/* ---------- Teams button ---------- */
+/* ---------- Teams and call buttons ---------- */
+const MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const chatUrl = email => 'https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(email);
 function copyText(t){
   // synchronous copy first, so it still counts as part of the tap when the Teams app opens
   let ok = false;
@@ -362,18 +372,18 @@ function copyText(t){
 // hold the Teams button to open a direct chat instead
 let holdTimer = 0, heldAt = 0;
 $('list').addEventListener('pointerdown', e => {
-  const b = e.target.closest('[data-act="teams"]'); if (!b) return;
+  const b = e.target.closest('[data-act="teams"]'); if (!b || !MOBILE) return;
   const c = data.contacts.find(x => x.id === b.closest('.card').dataset.id);
   if (!c || !c.email) return;
   clearTimeout(holdTimer);
   holdTimer = setTimeout(() => {
     heldAt = Date.now();
     setStatus('Opening Teams chat');
-    window.open('https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(c.email), '_blank', 'noopener');
+    window.open(chatUrl(c.email), '_blank', 'noopener');
   }, 600);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => $('list').addEventListener(t, () => clearTimeout(holdTimer)));
-$('list').addEventListener('contextmenu', e => { if (e.target.closest('[data-act="teams"]')) e.preventDefault(); });
+$('list').addEventListener('contextmenu', e => { if (MOBILE && e.target.closest('[data-act="teams"]')) e.preventDefault(); });
 
 /* ---------- vCard ---------- */
 function saveVcf(c){

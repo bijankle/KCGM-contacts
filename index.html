@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KCGM Contacts</title>
+<meta name="description" content="Search KCGM contacts and call, email or save them.">
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Contacts">
+<style>
+:root{
+  --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --muted:#5d6b7c; --faint:#97a3b2;
+  --line:#d5dbe3; --edge:#b9c3cf; --accent:#1f4e79; --accent-ink:#fff;
+  --call:#1d7a3e; --call-ink:#fff; --hit:#ffe58a; --danger:#b3261e;
+  --h:36px; --r:8px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#11161c; --card:#1a222b; --ink:#e6ebf1; --muted:#9aa7b6; --faint:#5f6c7b;
+    --line:#2b3642; --edge:#3a4756; --accent:#5b9bd5; --accent-ink:#0b1520;
+    --call:#2fa35a; --call-ink:#04140a; --hit:#7a6510; --danger:#ef6b62;
+  }
+}
+@media (pointer:coarse){ :root{ --h:46px; } }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 12px 8px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+.bar{display:flex;gap:8px;max-width:760px;margin:0 auto}
+.search{flex:1;position:relative}
+.search input{width:100%;height:var(--h);border:2px solid var(--edge);border-radius:var(--r);background:var(--card);padding:0 34px 0 12px;outline:none;font-size:16px}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.search input:focus{border-color:var(--accent)}
+.search .clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;width:30px;height:30px;color:var(--muted);cursor:pointer;font-size:18px;display:none}
+.search.has .clear{display:block}
+.ibtn{height:var(--h);min-width:var(--h);border:2px solid var(--edge);border-radius:var(--r);background:var(--card);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-weight:700;padding:0 10px;text-decoration:none;color:var(--ink);gap:6px;white-space:nowrap}
+.ibtn:hover{border-color:var(--accent)}
+.ibtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ibtn.call{background:var(--call);border-color:var(--call);color:var(--call-ink)}
+.ibtn.danger{color:var(--danger);border-color:var(--danger)}
+.ibtn svg{width:18px;height:18px;flex:none}
+.status{max-width:760px;margin:6px auto 0;font-size:12px;color:var(--faint);min-height:16px}
+main{max-width:760px;margin:0 auto;padding:8px 12px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.card .info{flex:1;min-width:0}
+.name{font-weight:700;font-size:16px}
+.sub{color:var(--muted);font-size:13.5px}
+.meta{font-size:13px;color:var(--muted);margin-top:2px}
+.meta span{display:inline}
+.note{font-size:13px;margin-top:3px}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more{border:0;background:none;color:var(--accent);padding:0;cursor:pointer;font-size:13px}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.links .ibtn{font-weight:700}
+.email{font-size:13.5px;word-break:break-all;align-self:center}
+.side{display:flex;flex-direction:column;gap:6px}
+mark{background:var(--hit);color:inherit;border-radius:2px}
+.divider{font-size:12px;color:var(--faint);margin:14px 2px 6px}
+.empty{color:var(--faint);text-align:center;padding:40px 10px}
+.showall{display:block;margin:10px auto}
+/* dialog */
+dialog{border:2px solid var(--edge);border-radius:12px;background:var(--card);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:14px 16px}
+.dlg h2{font-size:17px;margin:0 0 10px}
+.fld{display:block;margin-bottom:8px}
+.fld span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:2px}
+.fld input,.fld textarea{width:100%;min-height:var(--h);border:2px solid var(--edge);border-radius:var(--r);background:var(--bg);padding:6px 10px;outline:none;font-size:16px}
+.fld textarea{resize:vertical;min-height:60px}
+.fld input:focus,.fld textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row .grow{flex:1}
+.hint{font-size:12.5px;color:var(--muted)}
+.err{color:var(--danger);font-size:13px;min-height:18px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <div class="search" id="searchWrap">
+      <input id="q" type="search" placeholder="Search name, company, role, team, number…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search">
+      <button class="clear" id="clear" title="Clear" aria-label="Clear">✕</button>
+    </div>
+    <button class="ibtn primary" id="addBtn" title="Add contact" aria-label="Add contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="ibtn" id="setBtn" title="Editing settings" aria-label="Editing settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+<main id="list"><div class="empty">Loading contacts…</div></main>
+
+<dialog id="editDlg">
+  <form class="dlg" id="editForm" method="dialog">
+    <h2 id="editTitle" tabindex="-1" style="outline:none">Contact</h2>
+    <div id="editFields"></div>
+    <div class="err" id="editErr"></div>
+    <div class="row">
+      <button type="button" class="ibtn danger" id="delBtn" title="Delete contact">Delete</button>
+      <span class="grow"></span>
+      <button type="button" class="ibtn" id="cancelBtn">Cancel</button>
+      <button type="submit" class="ibtn primary" id="saveBtn">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="setDlg">
+  <form class="dlg" id="setForm" method="dialog">
+    <h2>Editing settings</h2>
+    <p class="hint">Searching and calling work for everyone. To add or edit contacts, paste a GitHub access token with write access to the <b>bijankle/KCGM-contacts</b> repo. It is stored only on this device.</p>
+    <label class="fld"><span>Your name (shown in the change history)</span><input id="setName" autocomplete="off"></label>
+    <label class="fld"><span>GitHub token</span><input id="setToken" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+    <label class="fld"><span>Branch the site is published from</span><input id="setBranch" autocomplete="off" placeholder="leave blank for the repo default"></label>
+    <div class="err" id="setErr"></div>
+    <div class="row">
+      <button type="button" class="ibtn danger" id="forgetBtn">Remove token</button>
+      <span class="grow"></span>
+      <button type="button" class="ibtn" id="setCancel">Cancel</button>
+      <button type="submit" class="ibtn primary">Check and save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+const OWNER = 'bijankle', REPO = 'KCGM-contacts', FILE = 'contacts.json';
+const FIELDS = [
+  ['name','Name'],['company','Company'],['role','Role'],['mobile','Mobile'],['email','Email'],
+  ['team','Team / Section'],['location','Location'],['whatsapp','WhatsApp Groups'],['notes','Status / Notes']
+];
+const PAGE = 60;
+const $ = id => document.getElementById(id);
+const ls = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+  set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+};
+const cfg = {
+  get token(){ return ls.get('kc.token', ''); },
+  get name(){ return ls.get('kc.name', ''); },
+  get branch(){ return ls.get('kc.branch', '') || defaultBranch; }
+};
+
+let defaultBranch = '';
+let data = { updated: '', fields: {}, contacts: [] };
+let index = [];
+let showAll = false;
+
+/* ---------- loading ---------- */
+function setStatus(t){ $('status').textContent = t; }
+function newer(a, b){ return (a && a.updated || '') >= (b && b.updated || '') ? a : b; }
+
+async function load(){
+  let best = null;
+  try { const c = JSON.parse(ls.get('kc.cache', 'null')); if (c && c.contacts) best = c; } catch {}
+  if (best) use(best, true);
+  try {
+    let d;
+    if (cfg.token) d = (await ghGet()).json;
+    else {
+      const r = await fetch(FILE + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      d = await r.json();
+    }
+    best = best ? newer(d, best) : d;
+    use(best);
+  } catch (e) {
+    if (!best) { $('list').innerHTML = '<div class="empty">Could not load contacts. Check your connection.</div>'; return; }
+    setStatus('Offline, showing saved copy');
+  }
+}
+function use(d, fromCache){
+  data = d;
+  ls.set('kc.cache', JSON.stringify(d));
+  buildIndex();
+  render();
+  if (!fromCache) setStatus(d.contacts.length + ' contacts');
+}
+
+/* ---------- search ---------- */
+const fold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const digits = s => String(s || '').replace(/\D/g, '');
+function buildIndex(){
+  index = data.contacts.map(c => {
+    const all = FIELDS.map(([k]) => fold(c[k])).join(' \u0001 ');
+    const words = Array.from(new Set(all.split(/[^a-z0-9@.+]+/).filter(w => w.length > 1)));
+    return { c, all, name: fold(c.name), words, dig: digits(c.mobile) };
+  });
+  index.sort((a, b) => a.name.localeCompare(b.name));
+}
+function lev(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i]; let best = i;
+    for (let j = 1; j <= b.length; j++){
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// score how well one token matches one contact: 0 = no match
+function tokenScore(t, e){
+  const d = digits(t);
+  if (d.length >= 3 && d.length === t.replace(/[\s+()-]/g,'').length){
+    if (e.dig.includes(d)) return 3;
+    if (d[0] === '0' && e.dig.includes('61' + d.slice(1))) return 3;
+  }
+  const at = e.all.indexOf(t);
+  if (at >= 0){
+    let s = 2;
+    if (at === 0 || /[^a-z0-9]/.test(e.all[at-1])) s += 1;   // starts a word
+    if (e.name.includes(t)) s += 1;
+    return s;
+  }
+  if (t.length < 4) return 0;
+  const max = t.length >= 7 ? 2 : 1;
+  for (const w of e.words){
+    if (lev(t, w, max) <= max) return 1;
+    if (w.length > t.length && lev(t, w.slice(0, t.length), max) <= max) return 1;
+  }
+  return 0;
+}
+function search(q){
+  const tokens = Array.from(new Set(fold(q).split(/\s+/).filter(Boolean)));
+  if (!tokens.length) return { tokens, full: index.map(e => e.c), part: [] };
+  const full = [], part = [];
+  for (const e of index){
+    let hits = 0, score = 0;
+    for (const t of tokens){ const s = tokenScore(t, e); if (s){ hits++; score += s; } }
+    if (hits === tokens.length) full.push({ e, score });
+    else if (hits && tokens.length > 1) part.push({ e, score: score + hits * 10 });
+  }
+  const by = (a, b) => b.score - a.score || a.e.name.localeCompare(b.e.name);
+  full.sort(by); part.sort(by);
+  return { tokens, full: full.map(x => x.e.c), part: part.slice(0, 30).map(x => x.e.c) };
+}
+
+/* ---------- rendering ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+function hl(text, tokens){
+  text = String(text || '');
+  if (!tokens.length) return esc(text);
+  const f = fold(text);
+  const marks = new Array(text.length).fill(false);
+  for (const t of tokens){ let i = f.indexOf(t); while (i >= 0){ for (let k = i; k < i + t.length; k++) marks[k] = true; i = f.indexOf(t, i + 1); } }
+  let out = '', on = false;
+  for (let i = 0; i < text.length; i++){
+    if (marks[i] !== on){ out += on ? '</mark>' : '<mark>'; on = marks[i]; }
+    out += esc(text[i]);
+  }
+  return out + (on ? '</mark>' : '');
+}
+function phones(m){
+  // split a cell like "0412 345 678 / 08 9022 1100" into dialable numbers
+  return String(m || '').split(/[\/,;]|\bor\b/i).map(s => s.trim()).filter(Boolean).map(s => {
+    const n = s.replace(/[^\d+]/g, '');
+    return { label: s, tel: n.replace(/(?!^)\+/g, '').length >= 6 ? n : '' };
+  });
+}
+const ICON = {
+  call: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>'
+};
+function card(c, tokens){
+  const sub = [c.role, c.company].filter(Boolean).map(s => hl(s, tokens)).join(' · ');
+  const meta = [c.team, c.location].filter(Boolean).map(s => hl(s, tokens)).join(' · ');
+  const wa = c.whatsapp ? '<div class="meta">WhatsApp: ' + hl(c.whatsapp, tokens) + '</div>' : '';
+  const note = c.notes ? '<div class="note clamp">' + hl(c.notes, tokens) + '</div>' : '';
+  const calls = phones(c.mobile).map(p => p.tel
+    ? '<a class="ibtn call" href="tel:' + esc(p.tel) + '" title="Call">' + ICON.call + hl(p.label, tokens) + '</a>'
+    : '<span class="sub" style="align-self:center">' + hl(p.label, tokens) + '</span>').join('');
+  const mail = c.email ? '<a class="ibtn" href="mailto:' + esc(c.email) + '" title="Email ' + esc(c.email) + '">' + ICON.mail + '<span class="email">' + hl(c.email, tokens) + '</span></a>' : '';
+  return '<div class="card" data-id="' + esc(c.id) + '"><div class="info">'
+    + '<div class="name">' + hl(c.name || '(no name)', tokens) + '</div>'
+    + (sub ? '<div class="sub">' + sub + '</div>' : '')
+    + (meta ? '<div class="meta">' + meta + '</div>' : '')
+    + wa + note
+    + ((calls || mail) ? '<div class="links">' + calls + mail + '</div>' : '')
+    + '</div><div class="side">'
+    + '<button class="ibtn" data-act="vcf" title="Save to phone contacts" aria-label="Save to phone contacts">' + ICON.save + '</button>'
+    + '<button class="ibtn" data-act="edit" title="Edit contact" aria-label="Edit contact">' + ICON.edit + '</button>'
+    + '</div></div>';
+}
+function render(){
+  const q = $('q').value;
+  $('searchWrap').classList.toggle('has', !!q);
+  const { tokens, full, part } = search(q);
+  let html = '';
+  const shown = showAll ? full : full.slice(0, PAGE);
+  html += shown.map(c => card(c, tokens)).join('');
+  if (full.length > shown.length) html += '<button class="ibtn showall" data-act="all">Show all ' + full.length + '</button>';
+  if (part.length && full.length < 10){
+    html += '<div class="divider">Close matches (not every word found)</div>' + part.map(c => card(c, tokens)).join('');
+  }
+  if (!html) html = '<div class="empty">No contacts match "' + esc(q) + '"</div>';
+  $('list').innerHTML = html;
+  // add "more…" where notes are cut off
+  $('list').querySelectorAll('.note.clamp').forEach(n => {
+    if (n.scrollHeight > n.clientHeight + 1){
+      const b = document.createElement('button'); b.className = 'more'; b.textContent = 'more…'; b.dataset.act = 'more';
+      n.after(b);
+    }
+  });
+  if (q.trim()) setStatus(full.length + ' found' + (part.length && full.length < 10 ? ', ' + part.length + ' close' : ''));
+  else if (data.contacts.length) setStatus(data.contacts.length + ' contacts');
+}
+
+let timer;
+$('q').addEventListener('input', () => {
+  ls.set('kc.q', $('q').value);
+  showAll = false;
+  clearTimeout(timer); timer = setTimeout(render, 60);
+});
+$('clear').onclick = () => { $('q').value = ''; ls.set('kc.q', ''); showAll = false; render(); $('q').focus(); };
+$('q').value = ls.get('kc.q', '');
+
+$('list').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'all'){ showAll = true; render(); return; }
+  if (act === 'more'){ b.previousElementSibling.classList.remove('clamp'); b.remove(); return; }
+  const id = b.closest('.card').dataset.id;
+  const c = data.contacts.find(x => x.id === id); if (!c) return;
+  if (act === 'vcf') saveVcf(c);
+  if (act === 'edit') openEdit(c);
+});
+
+/* ---------- vCard ---------- */
+function saveVcf(c){
+  const v = s => String(s || '').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/([,;])/g,'\\$1');
+  const parts = (c.name || '').trim().split(/\s+/);
+  const last = parts.length > 1 ? parts.pop() : '';
+  const lines = ['BEGIN:VCARD','VERSION:3.0','FN:' + v(c.name),'N:' + v(last) + ';' + v(parts.join(' ')) + ';;;'];
+  if (c.company) lines.push('ORG:' + v(c.company) + (c.team ? ';' + v(c.team) : ''));
+  if (c.role) lines.push('TITLE:' + v(c.role));
+  phones(c.mobile).filter(p => p.tel).forEach(p => lines.push('TEL;TYPE=CELL:' + p.tel));
+  if (c.email) lines.push('EMAIL;TYPE=WORK:' + c.email);
+  const note = [c.location && 'Location: ' + c.location, c.whatsapp && 'WhatsApp: ' + c.whatsapp, c.notes].filter(Boolean).join('\n');
+  if (note) lines.push('NOTE:' + v(note));
+  lines.push('END:VCARD');
+  const blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/vcard' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (c.name || 'contact').replace(/[^\w ]+/g, '').trim() + '.vcf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+/* ---------- GitHub storage ---------- */
+const api = () => 'https://api.github.com/repos/' + OWNER + '/' + REPO + '/contents/' + FILE;
+function headers(){ return { 'Authorization': 'Bearer ' + cfg.token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; }
+function b64ToText(b){ const bin = atob(b.replace(/\s/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))); }
+function textToB64(t){ const bytes = new TextEncoder().encode(t); let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+async function ghGet(){
+  if (!ls.get('kc.branch', '') && !defaultBranch){
+    // use the repo's default branch, which is where GitHub Pages normally publishes from
+    const r = await fetch('https://api.github.com/repos/' + OWNER + '/' + REPO, { headers: headers() });
+    if (r.status === 401) throw new Error('The token was not accepted.');
+    defaultBranch = r.ok ? (await r.json()).default_branch : 'main';
+  }
+  const r = await fetch(api() + '?ref=' + encodeURIComponent(cfg.branch) + '&t=' + Date.now(), { headers: headers(), cache: 'no-store' });
+  if (!r.ok) throw new Error(r.status === 401 ? 'The token was not accepted.' : r.status === 404 ? 'Cannot find contacts.json on branch "' + cfg.branch + '", or the token has no access to the repo.' : 'GitHub error ' + r.status);
+  const j = await r.json();
+  return { sha: j.sha, json: JSON.parse(b64ToText(j.content)) };
+}
+function serialise(d){
+  return '{\n"updated": ' + JSON.stringify(d.updated) + ',\n"fields": ' + JSON.stringify(d.fields) + ',\n"contacts": [\n'
+    + d.contacts.map(c => JSON.stringify(c)).join(',\n') + '\n]\n}\n';
+}
+// apply one change to the newest copy on GitHub, so edits by others are never overwritten
+async function commit(change, message){
+  for (let attempt = 0; attempt < 3; attempt++){
+    const { sha, json } = await ghGet();
+    const list = json.contacts;
+    const i = list.findIndex(c => c.id === change.id);
+    if (change.op === 'add') list.push(change.contact);
+    else if (i < 0) throw new Error('This contact was deleted by someone else.');
+    else if (change.op === 'update') list[i] = change.contact;
+    else if (change.op === 'delete') list.splice(i, 1);
+    json.updated = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    const r = await fetch(api(), { method: 'PUT', headers: headers(), body: JSON.stringify({
+      message: message + (cfg.name ? ' (by ' + cfg.name + ')' : ''), content: textToB64(serialise(json)), sha, branch: cfg.branch
+    }) });
+    if (r.ok) return json;
+    if (r.status !== 409 && r.status !== 422) throw new Error(r.status === 403 ? 'This token is not allowed to write to the repo.' : 'GitHub error ' + r.status);
+  }
+  throw new Error('Someone else was saving at the same time. Please try again.');
+}
+
+/* ---------- edit dialog ---------- */
+let editing = null;
+$('editFields').innerHTML = FIELDS.map(([k, label]) =>
+  '<label class="fld"><span>' + label + '</span>' + (k === 'notes'
+    ? '<textarea name="' + k + '" rows="2"></textarea>'
+    : '<input name="' + k + '" autocomplete="off" ' + (k === 'mobile' ? 'inputmode="tel"' : k === 'email' ? 'inputmode="email" autocapitalize="off"' : '') + '>') + '</label>').join('');
+function needToken(){
+  if (cfg.token) return false;
+  openSettings('Add a GitHub token first to add or edit contacts.');
+  return true;
+}
+function openEdit(c){
+  if (needToken()) return;
+  editing = c || null;
+  $('editTitle').textContent = c ? 'Edit contact' : 'New contact';
+  $('delBtn').style.display = c ? '' : 'none';
+  $('editErr').textContent = '';
+  FIELDS.forEach(([k]) => { $('editForm').elements[k].value = c ? (c[k] || '') : ''; });
+  if (!c){
+    // start a new contact from the words typed in the search box if it looks like a name
+    const q = $('q').value.trim();
+    if (q && !/\d/.test(q)) $('editForm').elements.name.value = q.replace(/\b\w/g, m => m.toUpperCase());
+  }
+  $('editDlg').showModal();
+  if (!c){ const n = $('editForm').elements.name; n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  else $('editForm').querySelector('h2').focus?.();
+}
+$('addBtn').onclick = () => openEdit(null);
+$('cancelBtn').onclick = () => $('editDlg').close();
+async function busy(btn, fn){
+  const all = $('editForm').querySelectorAll('button'); all.forEach(b => b.disabled = true);
+  const t = btn.textContent; btn.textContent = 'Saving…';
+  try { await fn(); } finally { all.forEach(b => b.disabled = false); btn.textContent = t; }
+}
+$('editForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = $('editForm').elements, contact = { id: editing ? editing.id : 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) };
+  FIELDS.forEach(([k]) => { const v = f[k].value.trim(); if (v) contact[k] = v; });
+  if (!contact.name){ $('editErr').textContent = 'Name is needed.'; f.name.focus(); return; }
+  await busy($('saveBtn'), async () => {
+    try {
+      const d = await commit({ op: editing ? 'update' : 'add', id: contact.id, contact }, (editing ? 'Edit ' : 'Add ') + contact.name);
+      use(d); $('editDlg').close(); setStatus('Saved ' + contact.name);
+    } catch (err){ $('editErr').textContent = err.message; }
+  });
+});
+$('delBtn').onclick = async () => {
+  if (!editing || !confirm('Delete ' + (editing.name || 'this contact') + '? This removes them for everyone.')) return;
+  await busy($('delBtn'), async () => {
+    try {
+      const d = await commit({ op: 'delete', id: editing.id }, 'Delete ' + editing.name);
+      use(d); $('editDlg').close(); setStatus('Deleted ' + editing.name);
+    } catch (err){ $('editErr').textContent = err.message; }
+  });
+};
+
+/* ---------- settings dialog ---------- */
+function openSettings(msg){
+  $('setName').value = cfg.name; $('setToken').value = cfg.token; $('setBranch').value = ls.get('kc.branch', '');
+  $('setErr').textContent = msg || '';
+  $('setDlg').showModal();
+}
+$('setBtn').onclick = () => openSettings();
+$('setCancel').onclick = () => $('setDlg').close();
+$('forgetBtn').onclick = () => {
+  if (!cfg.token || !confirm('Remove the token from this device? You will not be able to edit until you add one again.')) return;
+  ls.set('kc.token', null); $('setToken').value = ''; $('setDlg').close(); setStatus('Token removed');
+};
+$('setForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const oldT = cfg.token, oldB = ls.get('kc.branch', '');
+  ls.set('kc.name', $('setName').value.trim());
+  ls.set('kc.branch', $('setBranch').value.trim() || null);
+  const t = $('setToken').value.trim();
+  if (!t){ ls.set('kc.token', null); $('setDlg').close(); return; }
+  ls.set('kc.token', t);
+  $('setErr').textContent = 'Checking…';
+  try { const { json } = await ghGet(); use(json); $('setDlg').close(); setStatus('Editing is on for this device'); }
+  catch (err){ ls.set('kc.token', oldT || null); ls.set('kc.branch', oldB || null); $('setErr').textContent = err.message; }
+});
+
+load();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

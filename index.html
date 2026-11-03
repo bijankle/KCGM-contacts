@@ -59,6 +59,7 @@ main{max-width:760px;margin:0 auto;padding:8px 12px 80px}
 .side .ibtn{width:var(--h);padding:0}
 .ibtn.slot{border:1px dashed var(--line);background:none;cursor:default}
 .ibtn.slot.gap{border:0}
+.ibtn.teams{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 mark{background:var(--hit);color:inherit;border-radius:2px}
 .divider{font-size:12px;color:var(--faint);margin:14px 2px 6px}
 .empty{color:var(--faint);text-align:center;padding:40px 10px}
@@ -282,7 +283,7 @@ function card(c, tokens){
   const noTel = c.mobile && !tel ? '<div class="meta">Mobile: ' + hl(c.mobile, tokens) + '</div>' : '';
   const slot = '<span class="ibtn slot" aria-hidden="true"></span>';
   const call = tel ? '<a class="ibtn call" href="tel:' + esc(tel.tel) + '" title="Call ' + esc(tel.label) + '" aria-label="Call ' + esc(tel.label) + '">' + ICON.call + '</a>' : slot;
-  const teams = c.email ? '<a class="ibtn" href="https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(c.email) + '" target="_blank" rel="noopener" title="Chat in Teams" aria-label="Chat in Teams">' + ICON.teams + '</a>' : slot;
+  const teams = '<a class="ibtn teams" href="msteams://" data-act="teams" title="Copy ' + (c.email ? 'email' : 'name') + ' and open Teams (hold for direct chat)" aria-label="Copy ' + (c.email ? 'email' : 'name') + ' and open Teams">' + ICON.teams + '</a>';
   const mail = c.email ? '<a class="ibtn" href="mailto:' + esc(c.email) + '" title="Email ' + esc(c.email) + '" aria-label="Email ' + esc(c.email) + '">' + ICON.mail + '</a>' : slot;
   return '<div class="card" data-id="' + esc(c.id) + '"><div class="info">'
     + '<div class="name">' + hl(c.name || '(no name)', tokens) + '</div>'
@@ -335,9 +336,44 @@ $('list').addEventListener('click', e => {
   if (act === 'more'){ b.previousElementSibling.classList.remove('clamp'); b.remove(); return; }
   const id = b.closest('.card').dataset.id;
   const c = data.contacts.find(x => x.id === id); if (!c) return;
+  if (act === 'teams'){
+    if (Date.now() - heldAt < 800){ e.preventDefault(); return; }   // a long press already opened the chat
+    const text = c.email || c.name || '';
+    copyText(text);
+    setStatus((c.email ? 'Email' : 'Name') + ' copied, paste it in Teams search');
+    return;   // the link itself opens the Teams app
+  }
   if (act === 'vcf') saveVcf(c);
   if (act === 'edit') openEdit(c);
 });
+
+/* ---------- Teams button ---------- */
+function copyText(t){
+  // synchronous copy first, so it still counts as part of the tap when the Teams app opens
+  let ok = false;
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
+    ok = document.execCommand('copy'); ta.remove();
+  } catch {}
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {});
+}
+// hold the Teams button to open a direct chat instead
+let holdTimer = 0, heldAt = 0;
+$('list').addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-act="teams"]'); if (!b) return;
+  const c = data.contacts.find(x => x.id === b.closest('.card').dataset.id);
+  if (!c || !c.email) return;
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => {
+    heldAt = Date.now();
+    setStatus('Opening Teams chat');
+    window.open('https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(c.email), '_blank', 'noopener');
+  }, 600);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(t => $('list').addEventListener(t, () => clearTimeout(holdTimer)));
+$('list').addEventListener('contextmenu', e => { if (e.target.closest('[data-act="teams"]')) e.preventDefault(); });
 
 /* ---------- vCard ---------- */
 function saveVcf(c){

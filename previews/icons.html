@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Icon Options</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--ink:#1b2430;--muted:#5d6b7c;--line:#d5dbe3}
+@media (prefers-color-scheme:dark){:root{--bg:#11161c;--card:#1a222b;--ink:#e6ebf1;--muted:#9aa7b6;--line:#2b3642}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 auto 12px;max-width:760px;display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.num{font-size:28px;font-weight:800;width:34px}
+.big svg{width:96px;height:96px;display:block}
+.home{background:linear-gradient(160deg,#3a4f6b,#1c2433);border-radius:14px;padding:12px 14px;display:flex;gap:16px}
+.app{display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;font-size:11px}
+.app svg{width:60px;height:60px;display:block}
+.app.round svg{border-radius:50%}
+.tab{display:flex;align-items:center;gap:8px;background:#dfe3e8;color:#222;border-radius:8px 8px 0 0;padding:7px 12px;font-size:13px;width:170px}
+.tab svg{width:16px;height:16px;flex:none}
+.lbl{font-size:12px;color:var(--muted)}
+</style></head><body>
+<div id="out"></div>
+<script>
+const BG = '#1f4e79';
+const W = 'fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"';
+const opts = [
+  ['Phone handset', `<path fill="#fff" d="M178 140c10-10 26-10 36 0l40 40c10 10 10 26 0 36l-24 24c18 38 44 64 82 82l24-24c10-10 26-10 36 0l40 40c10 10 10 26 0 36l-28 28c-20 20-52 26-78 14-84-38-148-102-186-186-12-26-6-58 14-78z"/>`],
+  ['Contact card', `<rect x="96" y="136" width="320" height="240" rx="34" ${W}/><circle cx="196" cy="236" r="36" fill="#fff"/><path fill="#fff" d="M132 334c6-40 32-58 64-58s58 18 64 58z"/><path ${W} d="M300 226h70M300 286h50"/>`],
+  ['Search a person', `<circle cx="226" cy="226" r="118" ${W}/><circle cx="226" cy="196" r="38" fill="#fff"/><path fill="#fff" d="M156 292c10-36 38-52 70-52s60 16 70 52c-18 18-42 30-70 30s-52-12-70-30z"/><path ${W} stroke-width="44" d="M314 314l90 90"/>`],
+  ['Hard hat', `<path fill="#fff" d="M110 330c0-90 54-160 146-160s146 70 146 160z"/><rect x="86" y="322" width="340" height="44" rx="22" fill="#fff"/><path stroke="${BG}" stroke-width="22" stroke-linecap="round" d="M256 176v100"/><path fill="#ffc83d" d="M226 160h60v34h-60z" opacity="0"/>`],
+  ['Person calling', `<circle cx="220" cy="196" r="62" fill="#fff"/><path fill="#fff" d="M106 392c8-78 54-118 114-118s106 40 114 118z"/><path ${W} stroke-width="26" d="M330 150a70 70 0 0 1 0 92M366 118a116 116 0 0 1 0 156"/>`]
+];
+const svg = inner => `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><rect width="512" height="512" rx="96" fill="${BG}"/>${inner}</svg>`;
+document.getElementById('out').innerHTML = opts.map(([name, inner], i) => `
+<div class="opt"><div class="num">${i+1}</div>
+  <div><div class="big">${svg(inner)}</div><div class="lbl">${name}</div></div>
+  <div><div class="home"><div class="app">${svg(inner)}Contacts</div><div class="app round">${svg(inner)}Contacts</div></div><div class="lbl">iPhone and Android home screen</div></div>
+  <div><div class="tab">${svg(inner)}KCGM Contacts</div><div class="lbl">Browser tab on PC</div></div>
+</div>`).join('');
+</script></body></html>

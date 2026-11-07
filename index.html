@@ -325,12 +325,15 @@ function render(){
 
 let timer;
 $('q').addEventListener('input', () => {
-  ls.set('kc.q', $('q').value);
   showAll = false;
   clearTimeout(timer); timer = setTimeout(render, 60);
 });
-$('clear').onclick = () => { $('q').value = ''; ls.set('kc.q', ''); showAll = false; render(); $('q').focus(); };
-$('q').value = ls.get('kc.q', '');
+$('clear').onclick = () => { $('q').value = ''; showAll = false; render(); $('q').focus(); };
+// always open on the main page: empty search, top of the list
+try { localStorage.removeItem('kc.q'); } catch {}
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+$('q').value = '';
+window.addEventListener('pageshow', e => { if (e.persisted){ $('q').value = ''; showAll = false; render(); window.scrollTo(0, 0); } });
 
 $('list').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;

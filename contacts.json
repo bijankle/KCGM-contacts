@@ -1,5 +1,5 @@
 {
-"updated": "2026-11-05T00:53:34Z",
+"updated": "2026-11-09T23:54:27Z",
 "fields": {"name":"Name","company":"Company","role":"Role","mobile":"Mobile","email":"Email","team":"Team / Section","location":"Location","whatsapp":"WhatsApp Groups","notes":"Status / Notes"},
 "contacts": [
 {"id":"c1","name":"Aaron","mobile":"0448 735 825","whatsapp":"Crusher 2, C3","notes":"WhatsApp only, not on site list"},
@@ -670,6 +670,7 @@
 {"id":"c666","name":"(unknown)","mobile":"0461 351 062","whatsapp":"C3","notes":"WhatsApp only, not on site list"},
 {"id":"c667","name":"(unknown)","mobile":"0480 725 897","whatsapp":"C3","notes":"WhatsApp only, not on site list"},
 {"id":"c668","name":"(unknown)","mobile":"0408 888 599","whatsapp":"Left group","notes":"WhatsApp only, not on site list"},
-{"id":"nmw2u0zpn1m4f","name":"Andrew Mclaughlin","company":"NSR","role":"Senior maintenance technician","mobile":"0423400939"}
+{"id":"nmw2u0zpn1m4f","name":"Andrew Mclaughlin","company":"NSR","role":"Senior maintenance technician","mobile":"0423400939"},
+{"id":"nmw9x498vsye7","name":"NSR Coden.F","company":"NSR","role":"Maintenance?","mobile":"0437 901 975"}
 ]
 }

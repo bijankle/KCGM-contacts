@@ -1,7 +1,7 @@
 // Keeps the app working with poor or no signal: the app files come from the cache,
 // the contact list is fetched fresh when possible and falls back to the last copy.
-const CACHE = 'kc-v3';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'contacts.json'];
+const CACHE = 'kc-v4';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-v2-192.png', 'icon-v2-512.png', 'icon-v2-maskable-512.png', 'apple-touch-icon.png', 'contacts.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
